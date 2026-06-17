@@ -69,13 +69,11 @@ TargetObject="*\\CurrentVersion\\Run*"
 
 This wildcard pattern matches both `HKU\<SID>\...\Run` (the resolved form of HKCU) and `HKLM\...\Run`, plus both `Run` and `RunOnce` variants.
 
-**Results — 6 events:**
+**Results — :**
 
 | Source Hive | Details Value | Suspicious? |
 |---|---|---|
-| `HKU\<SID>\...Run\MicrosoftEdge...` (×3) | `msedge.exe --no-startup-window --win-session-start` | No — Edge auto-launch |
-| `HKU\<SID>\...Run\...` | Edge notification/cleanup entries | No — Edge background services |
-| `HKLM\...RunOnce\...` | `setup.exe` reference | Worth investigating |
+| `HKU\<SID>\...Run\MicrosoftEdge...`  | `msedge.exe --no-startup-window --win-session-start` | No — Edge auto-launch |
 | `HKLM\...Run\Updater` | `rundll32.exe C:\Windows\System32\dghelper.dll,mainfunc` | **Yes — malicious** |
 
 At this point I had what looked like a confirmed finding — and I want to be clear that the query above is scoped to only the standard native paths. The gap in this approach surfaces later in this hunt, and gets fixed in the lookup table writeup.
@@ -138,9 +136,10 @@ TargetObject="*\\CurrentVersion\\Run*"
 | stats count by Hashes, Image
 ```
 
+![Validate Legitimate Entries via Hash Lookup](screenshots/05-hash-lookup.png)
+
 Took each unique hash and checked it against rockyraccon and VirusTotal:
 - `msedge.exe` hash → confirmed Microsoft Edge, expected path, clean on VT
-- `setup.exe` hash → high host prevalence, executes from temp (normal for installers), clean on VT
 
 The `Company` field in Sysmon EID 1 is a useful quick filter, but it's not cryptographically verified — a signed Microsoft binary with a spoofed `Company` string is possible. Hash validation against VirusTotal is the authoritative check, not the PE metadata field.
 
