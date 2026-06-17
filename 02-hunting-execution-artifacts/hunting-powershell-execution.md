@@ -83,7 +83,7 @@ Before chasing the interesting lead, I ruled out the three `System32` events spa
 3. Confirmed `IntegrityLevel: System` — expected for a scheduled telemetry task
 4. Noted `ExecutionPolicy Restricted` in the command line, which limits script execution risk further
 
-![EchoTrail lookup confirming CompatTelRunner.exe legitimacy](screenshots/03-echotrail-compattelrunner.png)
+![rockyraccon lookup confirming CompatTelRunner.exe legitimacy](screenshots/03-rockyraccon-compattelrunner.png)
 
 **Decision:** Documented as known-good baseline noise, deprioritized, moved on. Skipping this triage step and chasing every lead with equal urgency is how analysts burn time on intrusions that aren't there.
 
