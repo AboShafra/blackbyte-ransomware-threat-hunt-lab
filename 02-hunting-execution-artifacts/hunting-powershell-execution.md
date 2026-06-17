@@ -191,3 +191,75 @@ index=attack_scenario source="XmlWinEventLog:Microsoft-Windows-PowerShell/Operat
 EID 4103 (module logging) gave me the exact `Invoke-WebRequest` parameter bindings — URI and output path — in plain text, with no need to deobfuscate anything. EID 4104 (script block logging) confirmed the same content at the full script-block level. Filtering out `.inf` references removed legitimate Windows setup/driver script noise that otherwise dominates this event ID.
 
 ## Full Process Tree Reconstructed
+[Impacket PSExec service binary]
+
+MyMVPfXG.exe (PE32, SYSTEM, C:\Windows)  ← VirusTotal: flagged as remote exec tool
+
+│
+
+└── cmd.exe (SysWOW64, SYSTEM)     ← 32-bit shell dropped by 32-bit payload
+
+│
+
+├── whoami.exe
+
+├── hostname.exe
+
+├── ipconfig.exe
+
+├── systeminfo.exe
+
+├── powershell.exe (SysWOW64) → IWR → dghelper.dll → C:\Windows\System32
+
+├── reg.exe → HKLM...\Run → rundll32 dghelper.dll,mainfunc
+
+├── wevtutil.exe → cl Security / cl System / cl Application
+
+└── certutil.exe → download mimi.exe
+
+└── mimi.exe → privilege::debug → lsadump::sam → lsadump::secrets
+
+## Key Findings
+
+| Finding | Artifact | Significance |
+|---|---|---|
+| 32-bit PowerShell from SysWOW64 | `SysWOW64\powershell.exe` | Indicates 32-bit payload in parent chain |
+| Invoke-WebRequest to attacker IP | `http://192.168.7.250/dghelper.dll` | Ingress tool transfer, C2 communication |
+| DLL dropped in System32 | `C:\Windows\System32\dghelper.dll` | Masquerading as legitimate system file |
+| SYSTEM-level execution | `IntegrityLevel: System` | Attacker has full privilege |
+| Randomly named parent binary | `MyMVPfXG.exe` | PSExec service binary — confirmed via VT hash |
+| Full attacker command sequence | Reconstructed via ParentProcessId pivot | Mapped entire post-exploitation chain |
+| C2 IP confirmed | `192.168.7.250:80` | Linked via Sysmon EID 3 + ProcessGuid |
+
+## ATT&CK Mapping
+
+| Tactic | Technique | ID |
+|---|---|---|
+| Execution | Command and Scripting Interpreter: PowerShell | T1059.001 |
+| Command & Control | Ingress Tool Transfer | T1105 |
+| Defense Evasion | System Binary Proxy Execution: Rundll32 | T1218.011 |
+| Defense Evasion | Masquerading: Match Legitimate Name or Location | T1036.005 |
+| Persistence | Boot/Logon Autostart: Registry Run Keys | T1547.001 |
+| Defense Evasion | Indicator Removal: Clear Windows Event Logs | T1070.001 |
+| Credential Access | OS Credential Dumping: SAM | T1003.002 |
+
+## Detection Opportunities
+
+- `powershell.exe` spawning from `SysWOW64` on a 64-bit host with `IntegrityLevel=System`
+- `Invoke-WebRequest` or `IWR` in PowerShell command lines on user workstations
+- PowerShell writing files to `C:\Windows\System32\` (Sysmon EID 11 with `Image=powershell.exe`)
+- Any process with a randomized alphanumeric name executing directly from `C:\Windows\`
+- Outbound HTTP (port 80) connections initiated by `powershell.exe`
+
+## What I Took Away From This Hunt
+
+- **`ProcessGuid` is the only reliable cross-event correlation field.** `ProcessId` gets recycled by the OS; `ProcessGuid` is unique per process instance for the life of the Sysmon log. I used it to link the process creation event to the network connection event with certainty, not assumption.
+- **SysWOW64 alone proves nothing — it's the stack of indicators that matters.** 32-bit execution, SYSTEM integrity, an internal-IP download, and a write into System32 together built the case. Any single one of these could have a benign explanation in isolation.
+- **PowerShell module logging (4103) is more immediately actionable than script block logging (4104) for simple cases.** 4103 gave me the exact parameter bindings — URI, output path — without needing to parse anything. I'd reach for 4103 first and 4104 when I suspect heavier obfuscation.
+- **EchoTrail and VirusTotal serve different purposes and I used both deliberately.** EchoTrail told me whether a *process name* is expected in the wild; VirusTotal told me whether a *specific binary* is known-malicious by hash. Conflating the two would have wasted time.
+- **Walking the process tree — find a suspicious process, grab its parent PID, enumerate its children, repeat upward — is the single most repeatable move in this entire hunt.** It's how I reconstructed the full attacker timeline from one anomalous PowerShell event.
+
+---
+
+**Next:** [Hunting CMD Execution →](hunting-cmd-execution.md)
+
