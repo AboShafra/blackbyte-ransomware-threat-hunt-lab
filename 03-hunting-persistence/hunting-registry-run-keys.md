@@ -90,7 +90,7 @@ Three entries reference `msedge.exe` with flags like `--no-startup-window --win-
 
 **How I confirmed they're legitimate:**
 1. Checked `Image` — `msedge.exe` executing from `C:\Program Files (x86)\Microsoft\Edge\Application\`
-2. Looked up the process via EchoTrail (rockyraccoon.io): returned Microsoft Edge, expected path confirmed
+2. Looked up the process via rockyraccon (rockyraccoon.io): returned Microsoft Edge, expected path confirmed
 3. Recognized the random suffix as a known per-user/per-instance identifier Edge generates as part of its own auto-launch registration — not attacker-controlled randomization
 
 **Decision:** Documented as expected baseline noise on any workstation with Edge installed. Moved on.
@@ -138,7 +138,7 @@ TargetObject="*\\CurrentVersion\\Run*"
 | stats count by Hashes, Image
 ```
 
-Took each unique hash and checked it against EchoTrail and VirusTotal:
+Took each unique hash and checked it against rockyraccon and VirusTotal:
 - `msedge.exe` hash → confirmed Microsoft Edge, expected path, clean on VT
 - `setup.exe` hash → high host prevalence, executes from temp (normal for installers), clean on VT
 
@@ -196,7 +196,7 @@ I solved this properly in the next part of this investigation rather than just p
 |---|---|
 | Malicious Run key entry | `rundll32.exe C:\Windows\System32\dghelper.dll,mainfunc`, written under SYSTEM context by `SysWOW64\reg.exe` |
 | Writing process parent | `SysWOW64\cmd.exe` (PID `9828`) — the same attacker shell identified throughout this investigation |
-| Benign noise identified and confirmed | 5 entries — Microsoft Edge auto-launch, verified via EchoTrail and VirusTotal hash lookup |
+| Benign noise identified and confirmed | 5 entries — Microsoft Edge auto-launch, verified via rockyraccon and VirusTotal hash lookup |
 | Coverage gap discovered | Native-path-only query missed the WOW64-redirected actual location of the write |
 | Technique layering | T1547.001 (Run key) combined with T1218.011 (Rundll32 proxy execution) |
 
