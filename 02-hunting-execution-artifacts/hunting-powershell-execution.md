@@ -79,7 +79,7 @@ ParentImage!="C:\\Windows\\explorer.exe"
 Before chasing the interesting lead, I ruled out the three `System32` events spawned by `CompatTelRunner.exe`:
 
 1. Confirmed the path: `C:\Windows\System32\CompatTelRunner.exe`
-2. Checked process reputation via **EchoTrail**: ~90% host prevalence → legitimate Microsoft compatibility telemetry process
+2. Checked process behavior via **Rocky Raccoon**: Verified against ~350,000 in-the-wild observations → spawning `powershell.exe` is a known, legitimate baseline behavior for this Microsoft telemetry process.
 3. Confirmed `IntegrityLevel: System` — expected for a scheduled telemetry task
 4. Noted `ExecutionPolicy Restricted` in the command line, which limits script execution risk further
 
