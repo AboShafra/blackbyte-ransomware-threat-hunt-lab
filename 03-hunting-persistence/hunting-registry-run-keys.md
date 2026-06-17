@@ -173,6 +173,8 @@ CommandLine="*dghelper*"
 | sort _time
 ```
 
+![Hunt for Persistence Payload Execution](screenshots/04-persistence-payload-execution.png)
+
 **Expected parent at a normal logon:** `userinit.exe` → `explorer.exe` → `rundll32.exe`. Any other parent process is worth a closer look.
 
 **What to check in `CommandLine`:**
